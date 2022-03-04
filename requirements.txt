@@ -5,7 +5,13 @@ django-mathfilters==1.0.0
 djangorestframework==3.11.0
 gunicorn==20.0.4
 requests==2.25.1
-
-
-
+html5lib==1.1
+pdfkit==0.6.1
+Pillow==7.2.0
+PyPDF2==1.26.0
+pytz==2020.1
+reportlab==3.5.53
+six==1.15.0
+sqlparse==0.3.1
+webencodings==0.5.1
 xhtml2pdf~=0.2.5
