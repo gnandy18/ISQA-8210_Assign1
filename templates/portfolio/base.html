@@ -48,6 +48,11 @@
     </style>
 </head>
 <body id="app-layout">
+    <style>
+        body {
+            background-color: beige;
+        }
+    </style>
 <nav class="navbar navbar-inverse">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -95,6 +100,7 @@
                     </li>
                 {% else %}
                     <li><a href="{% url 'login' %}"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+                    <li><a href="{% url "portfolio:register" %}"><span class="glyphicon glyphicon-log-in"></span> Register</a></li>
                 {% endif %}
             </ul>
         </div>

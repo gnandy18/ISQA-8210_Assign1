@@ -41,7 +41,7 @@
                 <th>Zip</th>
                 <th>Primary Email</th>
                 <th>Cell Phone</th>
-                <th colspan="3">Actions</th>
+                <th colspan="4">Actions</th>
             </tr>
             </thead>
             <tbody>
@@ -61,8 +61,12 @@
                            class="btn btn-danger">Delete</a>
                     </td>
 
-                    <td><a href=""
+                    <td><a href="{% url 'portfolio:portfolio' pk=customer.pk %}"
                            class="btn btn-primary">Portfolio</a>
+                    <td><a href="{% url 'portfolio:pdf_sum_report' pk=customer.pk %}"
+                           class="btn btn-primary">PDF Report</a>
+                    </td>
+
 
                 </tr>
             {% endfor %}

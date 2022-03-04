@@ -1,11 +1,7 @@
 {% extends 'portfolio/base.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
-    <style>
-        body {
-            background-color: beige;
-        }
-    </style>
+
     <h1>Edit Stock</h1>
     <form method="POST" class="stock-form">{% csrf_token %}
          {{ form|crispy }}

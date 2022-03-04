@@ -9,7 +9,15 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
-
+from django.db.models import Sum
+import decimal
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import CustomerSerializer
 
 now = timezone.now()
 
@@ -176,3 +184,89 @@ def change_password(request):
     return render(request, 'portfolio/change_password.html', {
         'form': form
     })
+
+
+@login_required
+def portfolio(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    customers = Customer.objects.filter(created_date__lte=timezone.now())
+    investments = Investment.objects.filter(customer=pk)
+    stocks = Stock.objects.filter(customer=pk)
+    sum_recent_value = Investment.objects.filter(customer=pk).aggregate(Sum('recent_value'))
+    sum_acquired_value = Investment.objects.filter(customer=pk).aggregate(Sum('acquired_value'))
+    # overall_investment_results = sum_recent_value-sum_acquired_value
+    # Initialize the value of the stocks
+    sum_current_stocks_value = 0
+    sum_of_initial_stock_value = 0
+
+    # Loop through each stock and add the value to the total
+    for stock in stocks:
+        sum_current_stocks_value += stock.current_stock_value()
+        sum_of_initial_stock_value += stock.initial_stock_value()
+
+    return render(request, 'portfolio/portfolio.html', {'customers': customers,
+                                                        'investments': investments,
+                                                        'stocks': stocks,
+                                                        'sum_acquired_value': sum_acquired_value,
+                                                        'sum_recent_value': sum_recent_value,
+                                                        'sum_current_stocks_value': sum_current_stocks_value,
+                                                        'sum_of_initial_stock_value': sum_of_initial_stock_value, })
+
+
+@login_required
+def pdf_sum_report(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    customers = Customer.objects.filter(created_date__lte=timezone.now())
+    investments = Investment.objects.filter(customer=pk)
+    stocks = Stock.objects.filter(customer=pk)
+    sum_recent_value = Investment.objects.filter(customer=pk).aggregate(Sum('recent_value'))
+    sum_acquired_value = Investment.objects.filter(customer=pk).aggregate(Sum('acquired_value'))
+    # overall_investment_results = sum_recent_value-sum_acquired_value
+    # Initialize the value of the stocks
+    sum_current_stocks_value = 0
+    sum_of_initial_stock_value = 0
+    for stock in stocks:
+        sum_current_stocks_value += stock.current_stock_value()
+        sum_of_initial_stock_value += stock.initial_stock_value()
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'filename="portfolio.pdf"'
+    template = get_template('portfolio/port_pdf.html')
+    html = template.render({'customer': customer,
+                            'investments': investments,
+                            'stocks': stocks,
+                            'sum_acquired_value': sum_acquired_value,
+                            'sum_recent_value': sum_recent_value,
+                            'sum_current_stocks_value': sum_current_stocks_value,
+                            'sum_of_initial_stock_value': sum_of_initial_stock_value, })
+
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    if pisa_status.err:
+        return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response
+
+
+# List at the end of the views.py
+# Lists all customers
+class CustomerList(APIView):
+
+    def get(self, request):
+        customers_json = Customer.objects.all()
+        serializer = CustomerSerializer(customers_json, many=True)
+        return Response(serializer.data)
+
+
+def register(request):
+    if request.method == 'POST':
+        user_form = UserRegistrationForm(request.POST)
+        if user_form.is_valid():
+            # Create a new user object but avoid saving it yet
+            new_user = user_form.save(commit=False)
+            # Set the chosen password
+            new_user.set_password(
+                user_form.cleaned_data['password'])
+            # Save the User object
+            new_user.save()
+            return render(request, 'portfolio/register_done.html', {'new_user': new_user})
+    else:
+        user_form = UserRegistrationForm()
+        return render(request, 'portfolio/register.html', {'user_form': user_form})
